@@ -1,0 +1,21 @@
+version : 1
+formatters:
+    simpleFormater:
+        format: '%(asctime)s - %(name)s - %(levelname)s - (%(threadName)-10s) %(message)s'
+        datefmt: '%d/%m/%Y %H:%M:%S'
+
+handlers:
+    file:
+        class : logging.handlers.RotatingFileHandler
+        formatter: simpleFormater
+        level: DEBUG
+        filename: gateway.log
+        maxBytes: 1024
+        backupCount: 3
+loggers:
+    pyLightEsb:
+        level: ERROR
+        handlers: [file]
+root:
+    level: ERROR
+    handlers: [file]
