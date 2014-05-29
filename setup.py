@@ -12,5 +12,5 @@ setup(
     description='Clitellum Communication Framework',
     extras_require={
     },
-    requires=[]
+    requires=['config',]
 )
