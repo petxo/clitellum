@@ -2,6 +2,11 @@
 ## @package clitellum.endpoints.gateways
 #  Este paquete contiene las clases que encapsulan el acceso al sistema de mensajeria con el
 # resto de la aplicacion
+# Estos gateways contienen amortiguadores, el SenderGateway, antes de enviar un mensaje al sistema
+# de mensajeria, lo almacena en una cola en base de datos o bien en fichero. Y el Receiver Gateway
+# cuando recibe del sistema de mensajeria, antes de procesarlo, lo almacena en un cola.
+# Este tipo de gateways son utiles en la comunicaciones entre los sistemas de mensajeria y sistemas externos.
+
 import threading
 
 from clitellum.core import queue, loadbalancers
@@ -15,7 +20,7 @@ __author__ = 'sergio'
 
 
 ## Clase que expone los metodos basicos para la encapsulacion del sistema de mensajeria
-class BaseGateway(Startable):
+class BaseGatewayQueue(Startable):
 
     ## Crea una instancia de BasicGateway
     # @param channel Canal de comunicacion utilizado por el gateway
@@ -98,17 +103,17 @@ def CreateSenderFromConfig(config):
     router = loadbalancers.CreateRouterFromConfig(config.get("balancer"))
     cola = queue.CreateQueueFromConfig(config["queue"])
 
-    return SenderGateway(router, cola, channels)
+    return SenderGatewayQueue(router, cola, channels)
 
 ## Clase que implementa un gateway de salida
-class SenderGateway (BaseGateway):
+class SenderGatewayQueue (BaseGatewayQueue):
     def __init__(self, loadBalancer, queue, channels=list(), numExtractors=4):
         self._loadBalancer = loadBalancer
-        BaseGateway.__init__(self, queue, channels, numExtractors)
+        BaseGatewayQueue.__init__(self, queue, channels, numExtractors)
 
     # TODO: añadir la informacion de enrutamiento, y añadir el canal al router
     def addChannel(self, outBoundChannel):
-        BaseGateway.addChannel(self, outBoundChannel)
+        BaseGatewayQueue.addChannel(self, outBoundChannel)
         self._loadBalancer.addChannel(outBoundChannel)
         outBoundChannel.OnSendError += self._errorSending
         outBoundChannel.OnMessageSent += self._onMessageSent
@@ -138,14 +143,14 @@ class SenderGateway (BaseGateway):
 
 
 ## Clase que implementa un gateway de entrada
-class ReceiverGateway(BaseGateway):
+class ReceiverGatewayQueue(BaseGatewayQueue):
 
     def __init__(self, queue, channels=list(), numExtractors=4):
-        BaseGateway.__init__(self, queue, channels, numExtractors)
+        BaseGatewayQueue.__init__(self, queue, channels, numExtractors)
         self.OnMessageReceived = EventHook()
 
     def addChannel(self, channel):
-        BaseGateway.addChannel(self, channel)
+        BaseGatewayQueue.addChannel(self, channel)
         channel.OnMessageReceived += self._messageReceivedChannel
 
     def _process_queue(self):
@@ -159,7 +164,7 @@ class ReceiverGateway(BaseGateway):
         self._queue.append(args.message)
 
     def __del__(self):
-        BaseGateway.__del__(self)
+        BaseGatewayQueue.__del__(self)
         self.OnMessageReceived.clear()
 
     def _invokeOnReceivedMessage(self, message):

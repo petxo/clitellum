@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../../../../')
 
 from clitellum.core import loadbalancers, queue
 from clitellum.endpoints.channels.amqpchannels import OutBoundAmqpChannel
-from clitellum.endpoints.gateways import SenderGateway
+from clitellum.endpoints.gatewaysqueue import SenderGatewayQueue
 
 __author__ = 'sergio'
 
@@ -22,7 +22,7 @@ channels = list()
 for i in range(0,20):
     channels.append(OutBoundAmqpChannel(host='amqp://%s:5672/Mrw.Infraestructura.Exch/Mrw.Bus.Test1.Input/Mrw.Bus.Test1InputKey' % rabbit_server, useAck=True))
 
-amqpGateway = SenderGateway(lb, q, channels=channels, numExtractors=len(channels))
+amqpGateway = SenderGatewayQueue(lb, q, channels=channels, numExtractors=len(channels))
 amqpGateway.connect()
 amqpGateway.start()
 
