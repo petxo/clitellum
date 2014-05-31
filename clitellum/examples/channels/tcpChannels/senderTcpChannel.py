@@ -13,7 +13,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - (%(threadNa
 def OnMessageSent(sender, args):
     print args.message
 
-server = '192.168.254.28'
+server = 'localhost'
 
 outbound = OutBoundChannelTcp(host='tcp://%s:80' % server, compressor= compressors.CreateCompressor("gzip", 9), useAck=True)
 outbound.OnMessageSent += OnMessageSent
