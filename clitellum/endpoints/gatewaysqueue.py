@@ -141,6 +141,25 @@ class SenderGatewayQueue (BaseGatewayQueue):
         #Eliminamos el mensaje de la cola definitivamente
         self._queue.task_done()
 
+## Crea un SenderGateway desde un config
+# { channels : [
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8080, maxReconnections : 20 }
+#               { type : tcp, timer : Logarithmic, host : tcp://server:8082, maxReconnections : 20 }
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8083, maxReconnections : 20 }
+#               ],
+#   numExtractors: 4,
+#   queue : { type : "Berkeley",  path: "./data/queue.db" }
+# }
+def CreateReceiverFromConfig(config):
+    channels = list()
+    for ch in config["channels"]:
+        channel = factories.CreateOutBoundChannelFromConfig(ch)
+        channels.append(channel)
+
+    cola = queue.CreateQueueFromConfig(config["queue"])
+
+    return ReceiverGatewayQueue(cola, channels, config['numExtractors'])
+
 
 ## Clase que implementa un gateway de entrada
 class ReceiverGatewayQueue(BaseGatewayQueue):

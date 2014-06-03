@@ -1,14 +1,17 @@
 # coding=utf-8
 import threading
+
+from clitellum.core import queue, loadbalancers
 from clitellum.core.eventhandling import EventHook
 from clitellum.core.fsm import Startable
+from clitellum.endpoints.channels import factories
 from clitellum.endpoints.channels.events import MessageReceivedArgs
+
 
 __author__ = 'sergio'
 
 
 class BaseGateway(Startable):
-
     ## Crea una instancia de BasicGateway
     # @param channel Canal de comunicacion utilizado por el gateway
     def __init__(self, channels=list()):
@@ -51,9 +54,13 @@ class BaseGateway(Startable):
 
     def _invokeOnStart(self):
         Startable._invokeOnStart(self)
+        for ch in self._channels:
+            ch.start()
 
     def _invokeOnStopped(self):
         Startable._invokeOnStopped(self)
+        for ch in self._channels:
+            ch.stop()
 
     def __del__(self):
         Startable.__del__(self)
@@ -62,8 +69,33 @@ class BaseGateway(Startable):
 
         self.OnConnectionError.clear()
 
+
+## Crea un SenderGateway desde un config
+# { channels : [
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8080, maxReconnections : 20 }
+#               { type : tcp, timer : Logarithmic, host : tcp://server:8082, maxReconnections : 20 }
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8083, maxReconnections : 20 }
+#               ],
+#   router : { type: "RoundRobin" }
+# }
+def CreateSenderFromConfig(config):
+    channels = list()
+    for ch in config["channels"]:
+        if not ch.get('number') is None:
+            for index in range(0, ch['number']):
+                channel = factories.CreateOutBoundChannelFromConfig(ch)
+                channels.append(channel)
+        else:
+            channel = factories.CreateOutBoundChannelFromConfig(ch)
+            channels.append(channel)
+
+    router = loadbalancers.CreateRouterFromConfig(config.get("balancer"))
+
+    return SenderGateway(router, channels)
+
+
 ## Clase que implementa un gateway de salida
-class SenderGateway (BaseGateway):
+class SenderGateway(BaseGateway):
     def __init__(self, loadBalancer, channels=list()):
         self._loadBalancer = loadBalancer
         BaseGateway.__init__(self, channels)
@@ -87,21 +119,40 @@ class SenderGateway (BaseGateway):
         # TODO: Lanzar un evento
         pass
 
+
+## Crea un SenderGateway desde un config
+# { channels : [
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8080, maxReconnections : 20 }
+#               { type : tcp, timer : Logarithmic, host : tcp://server:8082, maxReconnections : 20 }
+#               { type : 0Mq, timer : Logarithmic, host : tcp://server:8083, maxReconnections : 20 }
+#               ],
+#   numExtractors: 4
+# }
+def CreateReceiverFromConfig(config):
+    channels = list()
+    for ch in config["channels"]:
+        channel = factories.CreateInBoundChannelFromConfig(ch)
+        channels.append(channel)
+
+    if not config.get('numThreads') is None:
+        return ReceiverGateway(channels, config['numThreads'])
+    else:
+        return ReceiverGateway(channels)
+
+
 ## Clase que implementa un gateway de entrada
 class ReceiverGateway(BaseGateway):
-
-    def __init__(self, queue, channels=list(), numThreads=4):
+    def __init__(self, channels=list(), numThreads=4):
         BaseGateway.__init__(self, channels)
         self.OnMessageReceived = EventHook()
-        self._semaphor = threading.Semaphore(numThreads)
+        self._semaphore = threading.Semaphore(numThreads)
 
     def addChannel(self, channel):
         BaseGateway.addChannel(self, channel)
         channel.OnMessageReceived += self._messageReceivedChannel
 
     def _messageReceivedChannel(self, sender, args):
-        # TODO: Montar los hilos para sacar el mensaje
-        self._semaphor.acquire()
+        self._semaphore.acquire()
         threading.Thread(target=self._invokeOnReceivedMessage, kwargs={"message": args.message}).start()
 
     def __del__(self):
@@ -111,4 +162,4 @@ class ReceiverGateway(BaseGateway):
     def _invokeOnReceivedMessage(self, message):
         args = MessageReceivedArgs(message=message)
         self.OnMessageReceived.fire(self, args)
-        self._semaphor.release()
+        self._semaphore.release()

@@ -98,7 +98,7 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
     # @param receptionTimeout Timeout de recepcion de mensaje en milisegudos por defecto 20000
     def __init__(self, host="", reconnectionTimer=reconnectiontimers.CreateLogarithmicTimer(),
                  maxReconnections=Channel.MAX_RECONNECTIONS, receptionTimeout = 10, compressor = compressors.DefaultCompressor(),
-                 useAck=False, user='guest', password='guest', max_threads=20):
+                 useAck=False, user='guest', password='guest', max_threads=1):
 
         BaseAmqpChannel.__init__(self, host, user, password)
         InBoundChannel.__init__(self, host, reconnectionTimer, maxReconnections, compressor= compressor,

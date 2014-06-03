@@ -1,6 +1,7 @@
 import os
 import sys
 import signal
+from clitellum.core import loadbalancers
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../../../../'))
 
