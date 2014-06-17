@@ -1,4 +1,5 @@
 import re
+import socket
 import threading
 
 import amqp
@@ -82,6 +83,9 @@ class OutBoundAmqpChannel(OutBoundChannel, BaseAmqpChannel):
                 return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=routingKey)
 
         except amqp.AMQPError as ex:
+            loggerManager.get_endPoints_logger().error("Error: %s" % ex)
+            raise ConnectionError("Se ha perdido la conexcion con el servidor AMPQ")
+        except socket.error as ex:
             loggerManager.get_endPoints_logger().error("Error: %s" % ex)
             raise ConnectionError("Se ha perdido la conexcion con el servidor AMPQ")
         except Exception as ex:

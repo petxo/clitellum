@@ -10,7 +10,7 @@ handlers:
         formatter: simpleFormater
         level: DEBUG
         filename: gateway.log
-        maxBytes: 1024
+        maxBytes: 104857600
         backupCount: 3
 loggers:
     pyLightEsb:

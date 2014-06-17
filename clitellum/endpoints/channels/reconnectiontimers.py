@@ -32,7 +32,7 @@ def CreateTimerFormType(type):
 class ReconnectionTimer:
 
     ## Crea una instancia del temporizador de reconexion
-    def __int__(self):
+    def __init__(self):
         pass
 
     ## Se espera una vuelta del ciclo antes de continuar
@@ -49,8 +49,8 @@ class ReconnectionTimer:
 class InstantReconnectionTimer(ReconnectionTimer):
 
     ## Crea una instancia del temporizador instantaneo
-    def __int__(self):
-        ReconnectionTimer.__int__(self)
+    def __init__(self):
+        ReconnectionTimer.__init__(self)
 
     ## Convierte la instancia a string
     def __str__(self):
@@ -61,7 +61,7 @@ class InstantReconnectionTimer(ReconnectionTimer):
 # y el siguiente es logaritmico, .
 class LogarithmicReconnectionTimer(ReconnectionTimer):
 
-    def __int__(self):
+    def __init__(self):
         ReconnectionTimer.__init__(self)
         self.__seed = 1
 
