@@ -131,8 +131,13 @@ class SenderGateway(BaseGateway):
 def CreateReceiverFromConfig(config):
     channels = list()
     for ch in config["channels"]:
-        channel = factories.CreateInBoundChannelFromConfig(ch)
-        channels.append(channel)
+        if not ch.get('number') is None:
+            for index in range(0, ch['number']):
+                channel = factories.CreateInBoundChannelFromConfig(ch)
+                channels.append(channel)
+        else:
+            channel = factories.CreateInBoundChannelFromConfig(ch)
+            channels.append(channel)
 
     if not config.get('numThreads') is None:
         return ReceiverGateway(channels, config['numThreads'])

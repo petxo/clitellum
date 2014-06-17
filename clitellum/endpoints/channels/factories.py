@@ -69,9 +69,13 @@ def CreateInBoundChannelFromConfig(config):
         if not config['password'] is None:
             password = config['password']
 
+        maxChannelThread = 1
+        if not config['maxChannelThread'] is None:
+            maxChannelThread = config['maxChannelThread']
+
         channel = InBoundAmqpChannel(config["host"], reconnectionTimer=timer,
                                      maxReconnections=maxReconnections, compressor=compressor, useAck=useAck,
-                                     user=user, password=password)
+                                     user=user, password=password, max_threads=maxChannelThread)
     else:
         channel = InBoundChannelTcp(config["host"], reconnectionTimer=timer,
                                     maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)

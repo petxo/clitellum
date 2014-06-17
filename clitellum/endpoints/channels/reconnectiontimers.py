@@ -18,6 +18,10 @@ def CreateInstantTimer():
 def CreateLogarithmicTimer():
     return LogarithmicReconnectionTimer()
 
+## Metodo factoria que crear una instancia de un temporizador de tiempo constante
+def CreateConstantTimer(waiting_time=5):
+    return ConstantReconnectionTimer(waiting_time=waiting_time)
+
 
 ## Crea una temporizador en funcion del tipo especificado
 # @param type Tipo de temporizador "Instant", "Logarithmic"

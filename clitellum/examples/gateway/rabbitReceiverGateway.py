@@ -8,7 +8,7 @@ from clitellum.endpoints import gateways
 __author__ = 'sergio'
 
 def message_received(sender, args):
-    print args.message
+    # print args.message
     pass
 
 filecfg = os.path.join(os.path.dirname(__file__), 'rabbitGateways.cfg')
