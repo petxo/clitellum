@@ -1,11 +1,12 @@
 import os
 import sys
 import signal
+from clitellum.core import loadbalancers
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../../../../'))
 
 from clitellum.endpoints.channels.amqpchannels import OutBoundAmqpChannel
-from clitellum.endpoints.gateways import SenderGateway
+from clitellum.endpoints.gatewaysqueue import SenderGatewayQueue
 
 __author__ = 'sergio'
 
@@ -24,7 +25,7 @@ class AgencySender:
         for i in range(0,int(cfg['senderGateway']['channel']['number'])):
             channels.append(OutBoundAmqpChannel(host = cfg['senderGateway']['channel']['url'],
                                                 useAck=bool(cfg['senderGateway']['channel']['useAck'])))
-        self.amqpGateway = SenderGateway(lb, q, channels=channels, numExtractors=len(channels))
+        self.amqpGateway = SenderGatewayQueue(lb, q, channels=channels, numExtractors=len(channels))
         self.amqpGateway.connect()
 
     def signal_handler(self, signal, frame):

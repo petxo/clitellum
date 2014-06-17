@@ -1,4 +1,12 @@
 # coding=utf-8
+## @package clitellum.endpoints.gateways
+#  Este paquete contiene las clases que encapsulan el acceso al sistema de mensajeria con el
+# resto de la aplicacion
+# Estos gateways contienen amortiguadores, el SenderGateway, antes de enviar un mensaje al sistema
+# de mensajeria, lo almacena en una cola en base de datos o bien en fichero. Y el Receiver Gateway
+# cuando recibe del sistema de mensajeria, antes de procesarlo, lo almacena en un cola.
+# Este tipo de gateways son utiles en la comunicaciones entre los sistemas de mensajeria y sistemas externos.
+
 import threading
 
 from clitellum.core import queue, loadbalancers
@@ -11,15 +19,22 @@ from clitellum.endpoints.channels.events import MessageReceivedArgs
 __author__ = 'sergio'
 
 
-class BaseGateway(Startable):
+## Clase que expone los metodos basicos para la encapsulacion del sistema de mensajeria
+class BaseGatewayQueue(Startable):
+
     ## Crea una instancia de BasicGateway
     # @param channel Canal de comunicacion utilizado por el gateway
-    def __init__(self, channels=list()):
+    def __init__(self, queue, channels=list(), numExtractors=4):
         Startable.__init__(self)
         self._channels = list()
+        self._queue = queue
         self.OnConnectionError = EventHook()
         for channel in channels:
             self.addChannel(channel)
+
+        self._thExtractors = list()
+        for count in range(0, numExtractors):
+            self._thExtractors.append(threading.Thread(target=self._process_queue))
 
     ## Añade un nuevo canal al gateway
     def addChannel(self, channel):
@@ -49,18 +64,18 @@ class BaseGateway(Startable):
         #TODO: Es un error de conexion del canal que hay que tratar ademas de disparar
         self.OnConnectionError.fire(self, args)
 
-    def _process(self):
+    def _process_queue(self):
         pass
 
     def _invokeOnStart(self):
         Startable._invokeOnStart(self)
-        for ch in self._channels:
-            ch.start()
+        for th in self._thExtractors:
+            th.start()
 
     def _invokeOnStopped(self):
         Startable._invokeOnStopped(self)
-        for ch in self._channels:
-            ch.stop()
+        for th in self._thExtractors:
+            th.join()
 
     def __del__(self):
         Startable.__del__(self)
@@ -76,49 +91,55 @@ class BaseGateway(Startable):
 #               { type : tcp, timer : Logarithmic, host : tcp://server:8082, maxReconnections : 20 }
 #               { type : 0Mq, timer : Logarithmic, host : tcp://server:8083, maxReconnections : 20 }
 #               ],
-#   router : { type: "RoundRobin" }
+#   router : { type: "RoundRobin" },
+#   queue : { type : "Berkeley",  path: "./data/queue.db" }
 # }
 def CreateSenderFromConfig(config):
     channels = list()
     for ch in config["channels"]:
-        if not ch.get('number') is None:
-            for index in range(0, ch['number']):
-                channel = factories.CreateOutBoundChannelFromConfig(ch)
-                channels.append(channel)
-        else:
-            channel = factories.CreateOutBoundChannelFromConfig(ch)
-            channels.append(channel)
+        channel = factories.CreateOutBoundChannelFromConfig(ch)
+        channels.append(channel)
 
     router = loadbalancers.CreateRouterFromConfig(config.get("balancer"))
+    cola = queue.CreateQueueFromConfig(config["queue"])
 
-    return SenderGateway(router, channels)
-
+    return SenderGatewayQueue(router, cola, channels)
 
 ## Clase que implementa un gateway de salida
-class SenderGateway(BaseGateway):
-    def __init__(self, loadBalancer, channels=list()):
+class SenderGatewayQueue (BaseGatewayQueue):
+    def __init__(self, loadBalancer, queue, channels=list(), numExtractors=4):
         self._loadBalancer = loadBalancer
-        BaseGateway.__init__(self, channels)
+        BaseGatewayQueue.__init__(self, queue, channels, numExtractors)
 
     # TODO: añadir la informacion de enrutamiento, y añadir el canal al router
     def addChannel(self, outBoundChannel):
-        BaseGateway.addChannel(self, outBoundChannel)
+        BaseGatewayQueue.addChannel(self, outBoundChannel)
         self._loadBalancer.addChannel(outBoundChannel)
         outBoundChannel.OnSendError += self._errorSending
         outBoundChannel.OnMessageSent += self._onMessageSent
 
     def send(self, message):
-        outBoundChannel = self._loadBalancer.next()
-        outBoundChannel.send(message)
+        self._queue.append(message)
+
+    def _process_queue(self):
+        while self.state == Startable.RUNNING:
+#           TODO: controlar cuando no se puede enviar por uno o por ninguno de los channels
+            try:
+                item = self._queue.popleft(timeout=10)
+                if not item is None:
+                    outBoundChannel = self._loadBalancer.next()
+                    outBoundChannel.send(item)
+                del item
+            except Exception:
+                pass
 
     def _errorSending(self, sender, args):
-        # TODO: Tratamiento de los mensajes y lanzar un evento
-        pass
+        # Reencolamos el mensaje
+        self._queue.task_not_done()
 
     def _onMessageSent(self, sender, args):
-        # TODO: Lanzar un evento
-        pass
-
+        #Eliminamos el mensaje de la cola definitivamente
+        self._queue.task_done()
 
 ## Crea un SenderGateway desde un config
 # { channels : [
@@ -126,40 +147,45 @@ class SenderGateway(BaseGateway):
 #               { type : tcp, timer : Logarithmic, host : tcp://server:8082, maxReconnections : 20 }
 #               { type : 0Mq, timer : Logarithmic, host : tcp://server:8083, maxReconnections : 20 }
 #               ],
-#   numExtractors: 4
+#   numExtractors: 4,
+#   queue : { type : "Berkeley",  path: "./data/queue.db" }
 # }
 def CreateReceiverFromConfig(config):
     channels = list()
     for ch in config["channels"]:
-        channel = factories.CreateInBoundChannelFromConfig(ch)
+        channel = factories.CreateOutBoundChannelFromConfig(ch)
         channels.append(channel)
 
-    if not config.get('numThreads') is None:
-        return ReceiverGateway(channels, config['numThreads'])
-    else:
-        return ReceiverGateway(channels)
+    cola = queue.CreateQueueFromConfig(config["queue"])
+
+    return ReceiverGatewayQueue(cola, channels, config['numExtractors'])
 
 
 ## Clase que implementa un gateway de entrada
-class ReceiverGateway(BaseGateway):
-    def __init__(self, channels=list(), numThreads=4):
-        BaseGateway.__init__(self, channels)
+class ReceiverGatewayQueue(BaseGatewayQueue):
+
+    def __init__(self, queue, channels=list(), numExtractors=4):
+        BaseGatewayQueue.__init__(self, queue, channels, numExtractors)
         self.OnMessageReceived = EventHook()
-        self._semaphore = threading.Semaphore(numThreads)
 
     def addChannel(self, channel):
-        BaseGateway.addChannel(self, channel)
+        BaseGatewayQueue.addChannel(self, channel)
         channel.OnMessageReceived += self._messageReceivedChannel
 
+    def _process_queue(self):
+        while self.state == Startable.RUNNING:
+            item = self._queue.popleft(timeout=10)
+            if not item is None:
+                #TODO: Crear los hilos del demonio con el control de errores
+                pass
+
     def _messageReceivedChannel(self, sender, args):
-        self._semaphore.acquire()
-        threading.Thread(target=self._invokeOnReceivedMessage, kwargs={"message": args.message}).start()
+        self._queue.append(args.message)
 
     def __del__(self):
-        BaseGateway.__del__(self)
+        BaseGatewayQueue.__del__(self)
         self.OnMessageReceived.clear()
 
     def _invokeOnReceivedMessage(self, message):
-        args = MessageReceivedArgs(message=message)
+        args = MessageReceivedArgs(message= message)
         self.OnMessageReceived.fire(self, args)
-        self._semaphore.release()
