@@ -1,7 +1,7 @@
 # coding=utf-8
 import threading
 
-from clitellum.core import queue, loadbalancers
+from clitellum.core import loadbalancers
 from clitellum.core.eventhandling import EventHook
 from clitellum.core.fsm import Startable
 from clitellum.endpoints.channels import factories
