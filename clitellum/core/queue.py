@@ -151,8 +151,8 @@ class FileQueue(PersistenceQueue):
         if not os.path.exists(os.path.dirname(self.__connection)):
             os.makedirs(os.path.dirname(self.__connection))
 
-        self.__fileReader = open(self.__connection, "r+b")
         self.__fileWriter = open(self.__connection, "wb")
+        self.__fileReader = open(self.__connection, "r+b")
         self.__fileAck = open(self.__connection, "r+b")
 
         self._localStorage = threading.local()
@@ -173,7 +173,7 @@ class FileQueue(PersistenceQueue):
 
     def append(self, obj):
         self.__writerLock.acquire()
-        item = str(datetime.datetime.now())
+        item = str(obj)
         buffer = struct.pack('!I%ds' % (len(item),), len(item), item)
         self.__fileWriter.write(buffer)
         self.__fileWriter.flush()

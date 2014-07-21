@@ -109,6 +109,7 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
             useAck=useAck)
         self._receptionTimeout = receptionTimeout
         self.__isConsuming = False
+        self.__max_threads = max_threads
         self.__semaforo = threading.Semaphore(max_threads)
 
     def _connect_point(self):
@@ -120,8 +121,11 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
         BaseAmqpChannel._close_point(self)
 
     def __readMessage(self, msg):
-        self.__semaforo.acquire()
-        threading.Thread(target=self.__worker, kwargs={"msg" : msg}).start()
+        if self.__max_threads > 1:
+            self.__semaforo.acquire()
+            threading.Thread(target=self.__worker, kwargs={"msg" : msg}).start()
+        else:
+            self._processMessage(msg.body, 0, { "channel" : msg.channel, "delivery_tag": msg.delivery_tag })
 
     def __worker(self, msg):
         self._processMessage(msg.body, 0, { "channel" : msg.channel, "delivery_tag": msg.delivery_tag })

@@ -1,12 +1,11 @@
 # coding=utf-8
 import threading
 
-from clitellum.core import loadbalancers
+from clitellum.core import loadbalancers, loggerManager
 from clitellum.core.eventhandling import EventHook
 from clitellum.core.fsm import Startable
 from clitellum.endpoints.channels import factories
 from clitellum.endpoints.channels.events import MessageReceivedArgs
-
 
 __author__ = 'sergio'
 
@@ -151,14 +150,25 @@ class ReceiverGateway(BaseGateway):
         BaseGateway.__init__(self, channels)
         self.OnMessageReceived = EventHook()
         self._semaphore = threading.Semaphore(numThreads)
+        self._num_threads = numThreads
 
     def addChannel(self, channel):
         BaseGateway.addChannel(self, channel)
         channel.OnMessageReceived += self._messageReceivedChannel
 
     def _messageReceivedChannel(self, sender, args):
-        self._semaphore.acquire()
-        threading.Thread(target=self._invokeOnReceivedMessage, kwargs={"message": args.message}).start()
+        if self._num_threads > 1:
+            self._semaphore.acquire()
+            threading.Thread(target=self.__processMessage, kwargs={"message": args.message}).start()
+        else:
+            self.__processMessage(args.message)
+
+    def __processMessage(self, message):
+        try:
+            self._invokeOnReceivedMessage(message)
+        except Exception as ex:
+            loggerManager.get_endPoints_logger().error("Error al procesar el mensaje: %s", ex.message)
+            # TODO: Implementar Dead Letter Channel
 
     def __del__(self):
         BaseGateway.__del__(self)
@@ -167,4 +177,5 @@ class ReceiverGateway(BaseGateway):
     def _invokeOnReceivedMessage(self, message):
         args = MessageReceivedArgs(message=message)
         self.OnMessageReceived.fire(self, args)
-        self._semaphore.release()
+        if self._num_threads > 1:
+            self._semaphore.release()
