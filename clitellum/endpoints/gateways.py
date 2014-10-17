@@ -165,17 +165,18 @@ class ReceiverGateway(BaseGateway):
 
     def __processMessage(self, message):
         try:
-            self._invokeOnReceivedMessage(message)
+            args = MessageReceivedArgs(message=message)
+            self.OnMessageReceived.fire(self, args)
         except Exception as ex:
             loggerManager.get_endPoints_logger().error("Error al procesar el mensaje: %s", ex.message)
             # TODO: Implementar Dead Letter Channel
+        finally:
+            if self._num_threads > 1:
+                self._semaphore.release()
 
     def __del__(self):
         BaseGateway.__del__(self)
         self.OnMessageReceived.clear()
+        del self._semaphore
 
-    def _invokeOnReceivedMessage(self, message):
-        args = MessageReceivedArgs(message=message)
-        self.OnMessageReceived.fire(self, args)
-        if self._num_threads > 1:
-            self._semaphore.release()
+

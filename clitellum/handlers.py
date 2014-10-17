@@ -10,7 +10,6 @@ class HandlerManager:
 
     def handler(self, key, **options):
         def decorator(f):
-            # endpoint = options.pop('endpoint', None)
             self.add_handler(key, f, options)
             return f
         return decorator
@@ -20,3 +19,25 @@ class HandlerManager:
 
     def get_handler(self, key):
         return self.__handlers[key]()
+
+
+class HandlerBase:
+
+    def __init__(self):
+        self.__bus = None
+        self.__context = None
+
+    def initialize(self, bus, context):
+        self.__bus = bus
+        self.__context = context
+
+    @property
+    def bus(self):
+        return self.__bus
+
+    @property
+    def context(self):
+        return self.__context
+
+    def handle_message(self, message):
+        pass

@@ -101,7 +101,7 @@ class Channel:
                     loggerManager.get_endPoints_logger().error("Se ha alcanzado el maximo numero de reconexiones")
                     raise ConnectionError("Se ha alcanzado el maximo numero de reconexiones")
                 else:
-                    loggerManager.get_endPoints_logger().error("Intentado reconectar... %d" % self._reconnectionNumber)
+                    loggerManager.get_endPoints_logger().error("Intentado reconectar... %d, Host: %s" % (self._reconnectionNumber, self._host))
                     self._reconnectionNumber += 1
                     self._reconnectionTimer.wait()
         self._isConnected = True

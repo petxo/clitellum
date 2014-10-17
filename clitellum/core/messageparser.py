@@ -19,8 +19,8 @@ class MessageParser:
         return sum(0x00000000000000000000000000000000 + byterizedValue[i] << displacements[i] for i in range(0, len(byterizedValue)))
 
     @classmethod
-    def ToBytes(cls, serializedMessage):
-        message = json.loads(serializedMessage)
+    def ToBytes(cls, message):
+        serializedMessage = json.dumps(message)
         bytesMessage = GzipCompressor().compress(serializedMessage)
         bytesBodyType = message['Header']['BodyType'].encode('utf-8')
         callerContext = None
