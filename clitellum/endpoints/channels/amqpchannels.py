@@ -69,18 +69,18 @@ class OutBoundAmqpChannel(OutBoundChannel, BaseAmqpChannel):
     def _connect_point(self):
         BaseAmqpChannel._connect_point(self)
         if self._useAck:
-            self._channel.confirm_delivery()
+            self._channel.confirm_select()
 
     def _close_point(self):
         BaseAmqpChannel._close_point(self)
 
-    def _send(self, message, routingKey=''):
+    def _send(self, message, routing_key=''):
         try:
             msg = amqp.Message(message, content_type='text/plain', delivery_mode=2)
-            if routingKey == '':
+            if routing_key == '':
                 return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=self._key)
             else:
-                return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=routingKey)
+                return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=routing_key)
 
         except amqp.AMQPError as ex:
             loggerManager.get_endPoints_logger().error("Error: %s" % ex)

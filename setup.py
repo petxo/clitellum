@@ -13,5 +13,5 @@ setup(
     description='Clitellum Communication Framework',
     extras_require={
     },
-    requires=['config',]
+    requires=['config', 'amqp', 'pymongo',]
 )
