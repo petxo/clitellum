@@ -17,7 +17,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - (%(threadNa
 #loggerManager.getlogger().setLevel(logging.DEBUG)
 
 lb = loadbalancers.CreateRouterFromConfig(None)
-q = queue.CreateMongoDbQueue(host="mongodb://localhost" , dbName="Gateway", collection="Queue")
+q = queue.CreateMongoDbQueue(host="mongodb://localhost", dbName="Gateway", collection="Queue")
 channels = list()
 for i in range(0,20):
     channels.append(OutBoundAmqpChannel(host='amqp://%s:5672/MyExch/MyQueue.Input/MyQueueInputKey' % rabbit_server, useAck=True))

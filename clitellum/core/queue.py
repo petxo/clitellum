@@ -145,6 +145,7 @@ class MongoQueue(PersistenceQueue):
         self._conn.close()
 
 class FileQueue(PersistenceQueue):
+
     def __init__(self, connection):
         PersistenceQueue.__init__(self, connection)
         self.__connection = os.path.abspath(connection)
@@ -190,7 +191,7 @@ class FileQueue(PersistenceQueue):
         while keep_pooling:
             rec = self.__readFromQueue()
             if not rec is None:
-                self._localStorage.rec = rec['_id']
+                self._localStorage.rec = rec['Id']
                 return rec["Value"]
             else:
                 if not sleep_wait:

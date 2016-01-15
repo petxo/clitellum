@@ -15,7 +15,7 @@ def OnMessageSent(sender, args):
 
 server = 'localhost'
 
-outbound = OutBoundChannelTcp(host='tcp://%s:80' % server, compressor= compressors.CreateCompressor("gzip", 9), useAck=True)
+outbound = OutBoundChannelTcp(host='tcp://%s:5556' % server, compressor= compressors.CreateCompressor("gzip", 9), useAck=True)
 outbound.OnMessageSent += OnMessageSent
 outbound.connect()
 for i in range(0,100000):
