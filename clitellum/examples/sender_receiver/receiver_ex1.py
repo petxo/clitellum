@@ -1,8 +1,14 @@
+__author__ = 'Sergio'
+
 from clitellum import server
 from config import Config
 from clitellum.handlers import HandlerBase
+import yaml
+import logging
+import logging.config
 
-__author__ = 'Sergio'
+logcfg = yaml.load(open('logging.yml', 'r'))
+logging.config.dictConfig(logcfg)
 
 cfg = Config('server.cfg')
 srv = server.create_server_from_config(cfg)

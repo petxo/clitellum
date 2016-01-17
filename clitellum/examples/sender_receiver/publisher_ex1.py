@@ -1,9 +1,15 @@
 from config import Config
 from clitellum import publishers
+import logging
+import logging.config
 
-__author__ = 'Sergio'
+import yaml
+
+logcfg = yaml.load(open('logging.yml', 'r'))
+logging.config.dictConfig(logcfg)
 
 cfg = Config("publisher.cfg")
 pb = publishers.create_agent_from_config(cfg)
 print "Publicando el mensaje de saludo"
-pb.publish("Hola soy el publicador", "MensajeSaludo")
+msg = {'Mensaje' : 'Hola soy el publicador'}
+pb.publish(msg, "MensajeSaludo")

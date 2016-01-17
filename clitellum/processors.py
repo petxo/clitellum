@@ -1,3 +1,4 @@
+from clitellum.core import serialization
 from clitellum.core.bus import MessageBus
 from clitellum.core.fsm import Startable
 from clitellum.core.messageparser import MessageParser
@@ -55,11 +56,13 @@ class AgentProcessor(Startable, Bus):
         self._handler_manager = handler_manager
 
     def __on_message_received(self, sender, args):
-        message_bus = MessageParser.GetMessageFromBytes(args.message)
-        context = dict()
-        #TODO: Falta recrear el contexto a partir de lo llega en el mensaje
+        message_bus = serialization.loads(args.message)
+        context = message_bus['Header']['CallContext']
+
         handler = self._handler_manager.get_handler(message_bus['Header']['BodyType'])
         handler.initialize(self, context)
+
+        body_message = serialization.loads(message_bus['Body'])
         handler.handle_message(message_bus['Body'])
         pass
 
@@ -74,9 +77,9 @@ class AgentProcessor(Startable, Bus):
         self._senderGateway.close()
 
     def send(self, message, key):
-        message_bus = MessageBus.Create(message, key, self.identification.id, self.identification.type)
-        message_bytes = MessageParser.ToBytes(message_bus)
-        self._senderGateway.send(message_bytes)
+        message_bus = MessageBus.create(message, key, self.identification.id, self.identification.type)
+        message_str = serialization.dumps(message_bus)
+        self._senderGateway.send(message_str)
 
     def __del__(self):
         Startable.__del__(self)

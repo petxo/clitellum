@@ -15,21 +15,14 @@ __author__ = 'sergio'
 
 ## Clase base de un canal amqp
 class BaseAmqpChannel:
-
     ## Crea una intancia de BaseAmqpChannel
-    def __init__(self, host, user='guest', password='guest'):
-        match = re.search('^amqp://(.*):(\d+)/(.*)/(.*)/(.*)', host)
-        if match:
-            self._server = match.group(1)
-            self._port = int(match.group(2))
-            self._exchange = match.group(3)
-            self._queue = match.group(4)
-            self._key = match.group(5)
-            self._user = user
-            self._password = password
-            self._connection = None
-        else:
-            raise NameError("Invalid host name", host)
+    def __init__(self, connection_list, user='guest', password='guest'):
+        self._server = connection_list[0]
+        self._port = connection_list[1]
+        self._exchange = connection_list[2]
+        self._user = user
+        self._password = password
+        self._connection = None
 
     def _connect_point(self):
         try:
@@ -39,10 +32,7 @@ class BaseAmqpChannel:
             self._connection = amqp.Connection(host=self._server, heartbeat=60, userid=self._user,
                                                password=self._password)
             self._channel = self._connection.channel()
-
             self._channel.exchange_declare(exchange=self._exchange, durable=True, type='direct', auto_delete=False)
-            self._channel.queue_declare(queue=self._queue, durable=True, auto_delete=False)
-            self._channel.queue_bind(queue=self._queue, exchange=self._exchange, routing_key=self._key)
 
         except Exception as ex:
             raise ConnectionError(ex)
@@ -54,17 +44,27 @@ class BaseAmqpChannel:
 
 ## Clase que implementa un canal de salida con el protocolo amqp
 class OutBoundAmqpChannel(OutBoundChannel, BaseAmqpChannel):
-
     ## Crea una instancia de OutBoundAmqpChannel
     # @param reconnectionTimer Temporizador de reconexion
     # @param maxReconnections Numero maximo de reconexiones
     # @param host Nombre del host ej: amqp://server:port/exchange/queue/key
     def __init__(self, host="", reconnectionTimer=reconnectiontimers.CreateLogarithmicTimer(),
-                 maxReconnections=Channel.MAX_RECONNECTIONS, compressor = compressors.DefaultCompressor(), useAck=False,
+                 maxReconnections=Channel.MAX_RECONNECTIONS, compressor=compressors.DefaultCompressor(), useAck=False,
                  user='guest', password='guest'):
 
-        BaseAmqpChannel.__init__(self, host, user, password)
+        connection_list = self._extract_connection(host)
+        BaseAmqpChannel.__init__(self, connection_list, user, password)
         OutBoundChannel.__init__(self, host, reconnectionTimer, maxReconnections, compressor, useAck=useAck)
+
+    @staticmethod
+    def _extract_connection(url):
+
+        match = re.search('^amqp://(.*):(\d+)/(.*)', url)
+        if match:
+            connection_list = [match.group(1), int(match.group(2)), match.group(3)]
+        else:
+            raise NameError("Invalid host name", url)
+        return connection_list
 
     def _connect_point(self):
         BaseAmqpChannel._connect_point(self)
@@ -78,7 +78,7 @@ class OutBoundAmqpChannel(OutBoundChannel, BaseAmqpChannel):
         try:
             msg = amqp.Message(message, content_type='text/plain', delivery_mode=2)
             if routing_key == '':
-                return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=self._key)
+                return self._channel.basic_publish(msg, exchange=self._exchange)
             else:
                 return self._channel.basic_publish(msg, exchange=self._exchange, routing_key=routing_key)
 
@@ -94,28 +94,53 @@ class OutBoundAmqpChannel(OutBoundChannel, BaseAmqpChannel):
 
 
 class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
-
     ## Crea una instancia de InBoundAmqpChannel
     # @param reconnectionTimer Temporizador de reconexion
     # @param maxReconnections Numero maximo de reconexiones
     # @param host Nombre del host ej: amqp://server:port/queue
     # @param receptionTimeout Timeout de recepcion de mensaje en milisegudos por defecto 20000
     def __init__(self, host="", reconnectionTimer=reconnectiontimers.CreateLogarithmicTimer(),
-                 maxReconnections=Channel.MAX_RECONNECTIONS, receptionTimeout = 10, compressor = compressors.DefaultCompressor(),
+                 maxReconnections=Channel.MAX_RECONNECTIONS, receptionTimeout=10,
+                 compressor=compressors.DefaultCompressor(),
                  useAck=False, user='guest', password='guest', max_threads=1):
 
-        BaseAmqpChannel.__init__(self, host, user, password)
-        InBoundChannel.__init__(self, host, reconnectionTimer, maxReconnections, compressor= compressor,
-            useAck=useAck)
+        connection_list = self._extract_connection(host)
+
+        BaseAmqpChannel.__init__(self, connection_list, user, password)
+        self._queue = connection_list[3]
+        self._key = connection_list[4]
+
+        InBoundChannel.__init__(self, host, reconnectionTimer, maxReconnections, compressor=compressor,
+                                useAck=useAck)
+
         self._receptionTimeout = receptionTimeout
         self.__isConsuming = False
         self.__max_threads = max_threads
         self.__semaforo = threading.Semaphore(max_threads)
 
+    @staticmethod
+    def _extract_connection(url):
+
+        match = re.search('^amqp://(.*):(\d+)/(.*)/(.*)/(.*)', url)
+        if match:
+            connection_list = [match.group(1), int(match.group(2)), match.group(3), match.group(4), match.group(5)]
+        else:
+            raise NameError("Invalid host name", url)
+
+        return connection_list
+
     def _connect_point(self):
         BaseAmqpChannel._connect_point(self)
-        self._channel.basic_qos(prefetch_size=0, prefetch_count=10000, a_global=False)
+
+        try:
+            self._channel.queue_declare(queue=self._queue, durable=True, auto_delete=False)
+            self._channel.queue_bind(queue=self._queue, exchange=self._exchange, routing_key=self._key)
+            self._channel.basic_qos(prefetch_size=0, prefetch_count=10000, a_global=False)
         # self._connection.add_timeout(self._receptionTimeout, self._stopReceive)
+
+        except Exception as ex:
+            raise ConnectionError(ex)
+
 
     def _close_point(self):
         BaseAmqpChannel._close_point(self)
@@ -123,12 +148,12 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
     def __readMessage(self, msg):
         if self.__max_threads > 1:
             self.__semaforo.acquire()
-            threading.Thread(target=self.__worker, kwargs={"msg" : msg}).start()
+            threading.Thread(target=self.__worker, kwargs={"msg": msg}).start()
         else:
-            self._processMessage(msg.body, 0, { "channel" : msg.channel, "delivery_tag": msg.delivery_tag })
+            self._processMessage(msg.body, 0, {"channel": msg.channel, "delivery_tag": msg.delivery_tag})
 
     def __worker(self, msg):
-        self._processMessage(msg.body, 0, { "channel" : msg.channel, "delivery_tag": msg.delivery_tag })
+        self._processMessage(msg.body, 0, {"channel": msg.channel, "delivery_tag": msg.delivery_tag})
         self.__semaforo.release()
 
     def _startReceive(self):
