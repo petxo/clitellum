@@ -106,9 +106,9 @@ class SenderGateway(BaseGateway):
         outBoundChannel.OnSendError += self._errorSending
         outBoundChannel.OnMessageSent += self._onMessageSent
 
-    def send(self, message):
+    def send(self, message, key):
         outBoundChannel = self._loadBalancer.next()
-        outBoundChannel.send(message)
+        outBoundChannel.send(message, key)
 
     def _errorSending(self, sender, args):
         # TODO: Tratamiento de los mensajes y lanzar un evento

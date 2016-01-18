@@ -118,8 +118,8 @@ class SenderGatewayQueue (BaseGatewayQueue):
         outBoundChannel.OnSendError += self._errorSending
         outBoundChannel.OnMessageSent += self._onMessageSent
 
-    def send(self, message):
-        self._queue.append(message)
+    def send(self, message, key):
+        self._queue.append([key, message])
 
     def _process_queue(self):
         while self.state == Startable.RUNNING:

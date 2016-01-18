@@ -27,4 +27,4 @@ class Publisher:
         body = serialization.dumps(message)
         message_bus = MessageBus.create(body, key, self.identification.id, self.identification.type)
         message_serialized = serialization.dumps(message_bus)
-        self._senderGateway.send(message_serialized)
+        self._senderGateway.send(message_serialized, key)
