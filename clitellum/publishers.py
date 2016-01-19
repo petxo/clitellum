@@ -28,3 +28,6 @@ class Publisher:
         message_bus = MessageBus.create(body, key, self.identification.id, self.identification.type)
         message_serialized = serialization.dumps(message_bus)
         self._senderGateway.send(message_serialized, key)
+
+    def __del__(self):
+        self._senderGateway.close()

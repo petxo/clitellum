@@ -14,14 +14,15 @@ cfg = Config('server.cfg')
 srv = server.create_server_from_config(cfg)
 
 
-@srv.handler_manager.handler('MensajeSaludo')
+@srv.handler_manager.handler('Saludos.MensajeSaludo')
 class MensajeSaludoHandler(HandlerBase):
 
     def __init__(self):
         HandlerBase.__init__(self)
 
     def handle_message(self, message):
-        print message
+        print message['Mensaje']
+        k = 1/0
 
 srv.start()
 input('Pulsa Enter para finalizar')

@@ -32,7 +32,7 @@ class BaseAmqpChannel:
             self._connection = amqp.Connection(host=self._server, heartbeat=60, userid=self._user,
                                                password=self._password)
             self._channel = self._connection.channel()
-            self._channel.exchange_declare(exchange=self._exchange, durable=True, type='direct', auto_delete=False)
+            self._channel.exchange_declare(exchange=self._exchange, durable=True, type='topic', auto_delete=False)
 
         except Exception as ex:
             raise ConnectionError(ex)
@@ -99,6 +99,10 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
     # @param maxReconnections Numero maximo de reconexiones
     # @param host Nombre del host ej: amqp://server:port/queue
     # @param receptionTimeout Timeout de recepcion de mensaje en milisegudos por defecto 20000
+    # @param useAck Indica si se debe usar ack en la recepcion de los mensajes
+    # @param user Nombre del usuario para conectar con el servidor amqp
+    # @param password Password del usuario en el servidor amqp
+    # @param max_threads Numero de hilos que se levantaran al recibir los mensajes
     def __init__(self, host="", reconnectionTimer=reconnectiontimers.CreateLogarithmicTimer(),
                  maxReconnections=Channel.MAX_RECONNECTIONS, receptionTimeout=10,
                  compressor=compressors.DefaultCompressor(),

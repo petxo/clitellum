@@ -13,3 +13,7 @@ def get_core_logger():
 
 def get_endPoints_logger():
     return logging.getLogger("clitellum.endpoints")
+
+
+def get_processors_logger():
+    return logging.getLogger("clitellum.processors")

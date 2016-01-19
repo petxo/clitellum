@@ -146,7 +146,11 @@ def CreateReceiverFromConfig(config):
 
 ## Clase que implementa un gateway de entrada
 class ReceiverGateway(BaseGateway):
-    def __init__(self, channels=list(), numThreads=4):
+    ## Crea un objeto ReceiverGateway
+    # @param channels Lista de canales de recepcion
+    # @param numThreads Numero de hilos que procesan los mensajes de los canales, por defecto 1, lo que indica
+    # que se usa el mismo hilo de utilizado en la recepción del mensaje
+    def __init__(self, channels=list(), numThreads=1):
         BaseGateway.__init__(self, channels)
         self.OnMessageReceived = EventHook()
         self._semaphore = threading.Semaphore(numThreads)
@@ -168,7 +172,7 @@ class ReceiverGateway(BaseGateway):
             args = MessageReceivedArgs(message=message)
             self.OnMessageReceived.fire(self, args)
         except Exception as ex:
-            loggerManager.get_endPoints_logger().error("Error al procesar el mensaje: %s", ex.message)
+            loggerManager.get_endPoints_logger().exception("Error al procesar el mensaje")
             # TODO: Implementar Dead Letter Channel
         finally:
             if self._num_threads > 1:

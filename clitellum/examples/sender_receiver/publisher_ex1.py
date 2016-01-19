@@ -12,4 +12,10 @@ cfg = Config("publisher.cfg")
 pb = publishers.create_agent_from_config(cfg)
 print "Publicando el mensaje de saludo"
 msg = {'Mensaje' : 'Hola soy el publicador'}
-pb.publish(msg, "MensajeSaludo")
+
+for i in range(0, 1):
+    pb.publish(msg, "Saludos.MensajeSaludo")
+
+
+
+
