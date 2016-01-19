@@ -21,7 +21,7 @@ class MensajeSaludoHandler(HandlerBase):
         HandlerBase.__init__(self)
 
     def handle_message(self, message):
-        print message['Mensaje']
+        print '\n' + message['Mensaje']
         k = 1/0
 
 srv.start()

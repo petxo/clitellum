@@ -6,6 +6,7 @@ from clitellum.endpoints import gateways
 
 __author__ = 'Sergio'
 
+
 ## @package clitellum.processors
 #  Este paquete contiene las clases que encapsulan la relacion del los mensajes con sus manejadores
 
@@ -26,9 +27,9 @@ def create_agent_from_config(identification, cfg):
 
     return AgentProcessor(identification, rg, sg, eg)
 
+
 ## Clase que representa la interfaz para poder comunicar con el BUS
 class Bus:
-
     def __init__(self):
         pass
 
@@ -42,7 +43,6 @@ class Bus:
 
 ## Clase que implementa el procesamiento de los mensajes
 class AgentProcessor(Startable, Bus):
-
     def __init__(self, identification, receiver_gateway, sender_gateway, error_gateway=None):
         Startable.__init__(self)
         Bus.__init__(self)
@@ -79,11 +79,15 @@ class AgentProcessor(Startable, Bus):
         Startable._invokeOnStart(self)
         self._receiver_gateway.start()
         self._senderGateway.connect()
+        if self._error_gateway is not None:
+            self._error_gateway.connect()
 
     def _invokeOnStopped(self):
         Startable._invokeOnStopped(self)
         self._receiver_gateway.stop()
         self._senderGateway.close()
+        if self._error_gateway is not None:
+            self._error_gateway.close()
 
     def send(self, message, key):
         message_bus = MessageBus.create(message, key, self.identification.id, self.identification.type)
@@ -96,7 +100,7 @@ class AgentProcessor(Startable, Bus):
         message = errorGateway.create_error_message(message_received, exception)
         message_bus = MessageBus.create(message, "Error.ErrorHandler", self.identification.id, self.identification.type)
         message_str = serialization.dumps(message_bus)
-        self._error_gateway.send(message_str)
+        self._error_gateway.send(message_str, "Error.ErrorHandler")
 
     def __del__(self):
         Startable.__del__(self)
