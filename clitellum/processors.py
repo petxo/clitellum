@@ -72,7 +72,7 @@ class AgentProcessor(Startable, Bus):
             handler.handle_message(body_message)
 
         except Exception as ex:
-            loggerManager.get_processors_logger().exception("Error al procesar el mensaje")
+            loggerManager.get_processors_logger().exception("Error al procesar el mensaje %s", args.message)
             self._send_error(args.message, ex)
 
     def _invokeOnStart(self):
