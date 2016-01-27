@@ -4,6 +4,8 @@ import threading
 
 import amqp
 
+import time
+
 from clitellum.core import compressors, loggerManager
 from clitellum.endpoints.channels import reconnectiontimers
 from clitellum.endpoints.channels.basechannels import OutBoundChannel, Channel, InBoundChannel
@@ -145,11 +147,10 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
         except Exception as ex:
             raise ConnectionError(ex)
 
-
     def _close_point(self):
         BaseAmqpChannel._close_point(self)
 
-    def __readMessage(self, msg):
+    def __read_message(self, msg):
         if self.__max_threads > 1:
             self.__semaforo.acquire()
             threading.Thread(target=self.__worker, kwargs={"msg": msg}).start()
@@ -161,12 +162,12 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
         self.__semaforo.release()
 
     def _startReceive(self):
-        self._channel.basic_consume(callback=self.__readMessage, queue=self._queue, no_ack=False)
+        self.__consumer_tag = self._channel.basic_consume(callback=self.__read_message, queue=self._queue, no_ack=False)
         while self.isRunning:
-            self._channel.wait()
+            time.sleep(self._receptionTimeout)
 
     def _stopReceive(self):
-        self._channel.stop_consuming()
+        self._channel.basic_cancel(self.__consumer_tag)
 
     def _sendAck(self, object, idMessage):
         object["channel"].basic_ack(delivery_tag=object["delivery_tag"])

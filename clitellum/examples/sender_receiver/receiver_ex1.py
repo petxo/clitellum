@@ -23,6 +23,6 @@ class MensajeSaludoHandler(HandlerBase):
 
 
 srv.start()
-input('Pulsa Enter para finalizar')
+raw_input('Pulsa Enter para finalizar')
 
 srv.stop()

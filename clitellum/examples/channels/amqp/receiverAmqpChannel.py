@@ -16,11 +16,11 @@ def received_message(sender,args):
 logcfg = yaml.load(open('logging.yml', 'r'))
 logging.config.dictConfig(logcfg)
 
-inbound = InBoundAmqpChannel(host='amqp://localhost:5672/exhTest/queueTest/key', receptionTimeout=10, useAck=True)
+inbound = InBoundAmqpChannel(host='amqp://10.0.10.89:5672/exhTest/queueTest/key', receptionTimeout=10, useAck=True)
 inbound.OnMessageReceived += received_message
 inbound.start()
 
-input('Pulsa Enter para finalizar')
+raw_input('Pulsa Enter para finalizar')
 print "Parando ..."
 
 inbound.stop()
