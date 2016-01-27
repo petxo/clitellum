@@ -278,12 +278,14 @@ class InBoundChannel(Channel, Startable):
         try:
             msg = self._compressor.decompress(message)
             self.__invokeOnMessageReceived(msg)
-            if self._useAck:
-                loggerManager.get_endPoints_logger().debug("Enviando ACK %s" % message)
-                self._sendAck(object, idMessage)
         except Exception as ex:
             loggerManager.get_endPoints_logger().exception("Error al procesar el mensaje")
             raise ex
+        finally:
+            if self._useAck:
+                loggerManager.get_endPoints_logger().debug("Enviando ACK %s" % message)
+                self._sendAck(object, idMessage)
+
 
     ## Metodo que se las clases hijas deben sobrescribir para realizar la recepcion
     # No se debe dejar bloqueado el hilo

@@ -173,7 +173,7 @@ class ReceiverGateway(BaseGateway):
             self.OnMessageReceived.fire(self, args)
         except Exception as ex:
             loggerManager.get_endPoints_logger().exception("Error al procesar el mensaje")
-            # TODO: Implementar Dead Letter Channel
+            raise ex
         finally:
             if self._num_threads > 1:
                 self._semaphore.release()
