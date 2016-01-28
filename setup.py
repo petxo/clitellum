@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='clitellum',
-    version='2.0.0',
+    version='2.0.1',
     packages=['clitellum', 'clitellum.core', 'clitellum.endpoints',
               'clitellum.endpoints.channels', 'clitellum.utils'],
     package_dir={'clitellum': 'clitellum'},

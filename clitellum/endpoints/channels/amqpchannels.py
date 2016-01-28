@@ -164,7 +164,7 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
     def _startReceive(self):
         self.__consumer_tag = self._channel.basic_consume(callback=self.__read_message, queue=self._queue, no_ack=False)
         while self.isRunning:
-            time.sleep(self._receptionTimeout)
+            self._channel.wait()
 
     def _stopReceive(self):
         self._channel.basic_cancel(self.__consumer_tag)
