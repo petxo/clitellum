@@ -7,18 +7,10 @@ from clitellum.endpoints.channels.events import *
 from clitellum.endpoints.channels.exceptions import *
 from clitellum.core.eventhandling import EventHook
 from clitellum.core.fsm import Startable
-
-
-
-
-
-
+from clitellum.endpoints.channels import reconnectiontimers
 
 ## Clase base que gestiona que define un punto de conexion con un host, y que gestiona
 # las reconexiones mediante un temporizador
-from clitellum.endpoints.channels import reconnectiontimers
-
-
 class Channel:
     INFINITE_RECONNECTIONS = -1
     MAX_RECONNECTIONS = INFINITE_RECONNECTIONS
@@ -271,7 +263,6 @@ class InBoundChannel(Channel, Startable):
     def __endReceive(self):
         self._thReceive.join()
         self._terminateReceive()
-        pass
 
     ## Metodo al que las clases hijas deben llamar cuando se recibe un mensaje
     def _processMessage(self, message, idMessage, object):

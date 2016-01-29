@@ -16,7 +16,7 @@ def received_message(sender,args):
 logcfg = yaml.load(open('logging.yml', 'r'))
 logging.config.dictConfig(logcfg)
 
-inbound = InBoundAmqpChannel(host='amqp://10.0.10.89:5672/WegoErrors/Errors/#', receptionTimeout=10, useAck=True)
+inbound = InBoundAmqpChannel(host='amqp://localhost:5672/exhTest/queueTest/#', receptionTimeout=10, useAck=True)
 inbound.OnMessageReceived += received_message
 inbound.start()
 

@@ -1,3 +1,4 @@
+from _socket import timeout
 import re
 import socket
 import threading
@@ -164,7 +165,10 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
     def _startReceive(self):
         self.__consumer_tag = self._channel.basic_consume(callback=self.__read_message, queue=self._queue, no_ack=False)
         while self.isRunning:
-            self._channel.wait()
+            try:
+                self._channel.wait(timeout=self._receptionTimeout)
+            except timeout as ex:
+                pass
 
     def _stopReceive(self):
         self._channel.basic_cancel(self.__consumer_tag)
