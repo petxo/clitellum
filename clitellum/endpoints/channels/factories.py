@@ -39,7 +39,7 @@ def CreateOutBoundChannelFromConfig(config):
 
     elif config.get("type").lower() == "custom":
         factory = _get_class(config["factory"])()
-        channel = factory.create_from_cfg(config)
+        channel = factory.create_from_cfg(config, timer, compressor, maxReconnections)
 
     else:
         channel = OutBoundChannelTcp(config["host"], reconnectionTimer=timer,
@@ -84,7 +84,7 @@ def CreateInBoundChannelFromConfig(config):
 
     elif config.get("type").lower() == "custom":
         factory = _get_class(config["factory"])()
-        channel = factory.create_from_cfg(config)
+        channel = factory.create_from_cfg(config, timer, compressor, maxReconnections)
 
     else:
         channel = InBoundChannelTcp(config["host"], reconnectionTimer=timer,
@@ -105,5 +105,5 @@ class CustomFactoryBase:
     def __init__(self):
         pass
 
-    def create_from_cfg(self, cfg):
+    def create_from_cfg(self, cfg, reconnectionTimer, compressor, maxReconnections):
         pass
