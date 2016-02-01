@@ -33,6 +33,10 @@ class HandlerBase:
 
     @property
     def bus(self):
+        """
+        :rtype: SenderGateway
+        :return:
+        """
         return self.__bus
 
     @property

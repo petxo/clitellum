@@ -19,8 +19,7 @@ class MensajeSaludoHandler(HandlerBase):
 
     def handle_message(self, message):
         print '\n' + message['Mensaje']
-        k = 1 / 0
-
+        self.bus.send("Mensaje recibido", "Respuesta.MensajeSaludo")
 
 srv.start()
 raw_input('Pulsa Enter para finalizar')

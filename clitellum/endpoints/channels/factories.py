@@ -36,6 +36,11 @@ def CreateOutBoundChannelFromConfig(config):
     elif config.get("type").lower() == "amqp":
         channel = OutBoundAmqpChannel(config["host"], reconnectionTimer=timer,
                                       maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)
+
+    elif config.get("type").lower() == "custom":
+        factory = _get_class(config["factory"])()
+        channel = factory.create_from_cfg(config)
+
     else:
         channel = OutBoundChannelTcp(config["host"], reconnectionTimer=timer,
                                      maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)
@@ -76,7 +81,29 @@ def CreateInBoundChannelFromConfig(config):
         channel = InBoundAmqpChannel(config["host"], reconnectionTimer=timer,
                                      maxReconnections=maxReconnections, compressor=compressor, useAck=useAck,
                                      user=user, password=password, max_threads=maxChannelThread)
+
+    elif config.get("type").lower() == "custom":
+        factory = _get_class(config["factory"])()
+        channel = factory.create_from_cfg(config)
+
     else:
         channel = InBoundChannelTcp(config["host"], reconnectionTimer=timer,
                                     maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)
     return channel
+
+
+def _get_class(class_name):
+    parts = class_name.split('.')
+    module = ".".join(parts[:-1])
+    module_obj = __import__(module)
+    for comp in parts[1:]:
+        module_obj = getattr(module_obj, comp)
+    return module_obj
+
+
+class CustomFactoryBase:
+    def __init__(self):
+        pass
+
+    def create_from_cfg(self, cfg):
+        pass
