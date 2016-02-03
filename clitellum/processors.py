@@ -92,7 +92,7 @@ class AgentProcessor(Startable, Bus):
     def send(self, message, key):
         message_bus = MessageBus.create(message, key, self.identification.id, self.identification.type)
         message_str = serialization.dumps(message_bus)
-        self._senderGateway.send(message_str)
+        self._senderGateway.send(message_str, key)
 
     def _send_error(self, message_received, exception):
         if self._error_gateway is None:
