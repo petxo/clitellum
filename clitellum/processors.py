@@ -37,7 +37,7 @@ class Bus:
     def identification(self):
         return None
 
-    def send(self, message, key):
+    def send(self, message, key, context=None):
         pass
 
 
@@ -89,8 +89,12 @@ class AgentProcessor(Startable, Bus):
         if self._error_gateway is not None:
             self._error_gateway.close()
 
-    def send(self, message, key):
+    def send(self, message, key, context=None):
         message_bus = MessageBus.create(message, key, self.identification.id, self.identification.type)
+
+        if context is not None:
+            message_bus['Header']['CallContext'] = context
+
         message_str = serialization.dumps(message_bus)
         self._senderGateway.send(message_str, key)
 

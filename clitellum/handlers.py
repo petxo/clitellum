@@ -45,3 +45,6 @@ class HandlerBase:
 
     def handle_message(self, message):
         pass
+
+    def _send(self, message, key):
+        self.bus.send(message, key=key, context=self.context)

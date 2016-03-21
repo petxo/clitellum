@@ -23,9 +23,12 @@ class Publisher:
     def identification(self):
         return self._identification
 
-    def publish(self, message, key):
+    def publish(self, message, key, context=None):
         body = serialization.dumps(message)
         message_bus = MessageBus.create(body, key, self.identification.id, self.identification.type)
+        if context is not None:
+            message_bus['Header']['CallContext'] = context
+
         message_serialized = serialization.dumps(message_bus)
         self._senderGateway.send(message_serialized, key)
 
