@@ -34,7 +34,16 @@ def CreateOutBoundChannelFromConfig(config):
         channel = OutBoundChannelTcp(config["host"], reconnectionTimer=timer,
                                      maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)
     elif config.get("type").lower() == "amqp":
-        channel = OutBoundAmqpChannel(config["host"], reconnectionTimer=timer,
+
+        user = 'guest'
+        password = 'guest'
+
+        if not config['user'] is None:
+            user = config['user']
+        if not config['password'] is None:
+            password = config['password']
+
+        channel = OutBoundAmqpChannel(config["host"], reconnectionTimer=timer, user=user, password=password,
                                       maxReconnections=maxReconnections, compressor=compressor, useAck=useAck)
 
     elif config.get("type").lower() == "custom":
