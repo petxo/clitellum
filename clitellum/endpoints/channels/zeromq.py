@@ -26,7 +26,7 @@ class OutBoundChannelZeroMq(OutBoundChannel):
         self._socket.close()
         self._context.destroy()
 
-    def _send(self, message):
+    def _send(self, message, routingKey=''):
         self._socket.send(message)
 
 
