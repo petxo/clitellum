@@ -6,6 +6,6 @@ __author__ = 'sergio'
 sender = OutBoundAmqpChannel(host='amqp://localhost:5672/exhTest',
                              compressor=compressors.CreateCompressor("gzip"), useAck=False)
 sender.connect()
-for i in range(0, 100000):
+for i in range(0, 1):
     sender.send("Test Message", 'key')
 sender.close()

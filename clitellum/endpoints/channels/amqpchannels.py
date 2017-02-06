@@ -34,6 +34,7 @@ class BaseAmqpChannel:
 
             self._connection = amqp.Connection(host=self._server, heartbeat=60, userid=self._user,
                                                password=self._password)
+            self._connection.connect()
             self._channel = self._connection.channel()
             self._channel.exchange_declare(exchange=self._exchange, durable=True, type='topic', auto_delete=False)
 
@@ -166,9 +167,11 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
         self.__consumer_tag = self._channel.basic_consume(callback=self.__read_message, queue=self._queue, no_ack=False)
         while self.isRunning:
             try:
-                self._channel.wait(timeout=self._receptionTimeout)
+                self._channel.wait(self._wait_method, timeout=self._receptionTimeout)
             except timeout as ex:
                 pass
+    def _wait_method(self):
+        pass
 
     def _stopReceive(self):
         self._channel.basic_cancel(self.__consumer_tag)
