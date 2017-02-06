@@ -1,5 +1,7 @@
 import new
 
+from clitellum.core import serialization
+
 __author__ = 'Sergio'
 
 
@@ -47,4 +49,4 @@ class HandlerBase:
         pass
 
     def _send(self, message, key):
-        self.bus.send(message, key=key, context=self.context)
+        self.bus.send(serialization.dumps(message), key=key, context=self.context)
