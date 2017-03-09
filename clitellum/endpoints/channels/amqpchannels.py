@@ -116,7 +116,7 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
 
         BaseAmqpChannel.__init__(self, connection_list, user, password)
         self._queue = connection_list[3]
-        self._key = connection_list[4]
+        self._key = connection_list[4].split(';')
 
         InBoundChannel.__init__(self, host, reconnectionTimer, maxReconnections, compressor=compressor,
                                 useAck=useAck)
@@ -142,7 +142,8 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
 
         try:
             self._channel.queue_declare(queue=self._queue, durable=True, auto_delete=False)
-            self._channel.queue_bind(queue=self._queue, exchange=self._exchange, routing_key=self._key)
+            for key in self._key:
+                self._channel.queue_bind(queue=self._queue, exchange=self._exchange, routing_key=key)
             self._channel.basic_qos(prefetch_size=0, prefetch_count=10000, a_global=False)
         # self._connection.add_timeout(self._receptionTimeout, self._stopReceive)
 
