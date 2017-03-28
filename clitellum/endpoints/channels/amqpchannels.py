@@ -167,7 +167,7 @@ class InBoundAmqpChannel(InBoundChannel, BaseAmqpChannel):
             self._processMessage(body, 0, {"channel": channel, "delivery_tag": method_frame.delivery_tag})
 
     def __worker(self, msg):
-        self._processMessage(msg.body, 0, {"channel": msg.channel, "delivery_tag": msg.delivery_tag})
+        self._processMessage(msg['body'], 0, {"channel": msg['channel'], "delivery_tag": msg['delivery_tag']})
         self.__semaforo.release()
 
     def _startReceive(self):
