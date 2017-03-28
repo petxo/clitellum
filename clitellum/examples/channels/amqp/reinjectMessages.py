@@ -13,6 +13,7 @@ output = OutBoundAmqpChannel(host='amqp://192.168.3.186:5672/Mrw.Gestion3.Exch/M
 
 def received_message(sender, args):
     output.send(args.message)
+    print args.message
     pass
 
 

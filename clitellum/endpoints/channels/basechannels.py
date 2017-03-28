@@ -149,7 +149,7 @@ class OutBoundChannel(Channel):
                 msg = self._compressor.compress(message)
                 ret = self._send(msg, routingKey)
                 if not ret:
-                    ret = self.__checkMessageSent(message)
+                    self.__checkMessageSent(message)
                 else:
                     self._invokeOnMessageSent(message)
 
