@@ -1,21 +1,13 @@
-from _socket import timeout
 import re
 import socket
 import threading
 
-#import amqp
-
-import time
-
-import amqp
-import librabbitmq
 import pika
 
 from clitellum.core import compressors, loggerManager
 from clitellum.endpoints.channels import reconnectiontimers
 from clitellum.endpoints.channels.basechannels import OutBoundChannel, Channel, InBoundChannel
-from clitellum.endpoints.channels.exceptions import ConnectionError, SendError
-
+from clitellum.endpoints.channels.exceptions import ConnectionError
 
 __author__ = 'sergio'
 
